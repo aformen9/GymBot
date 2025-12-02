@@ -1,5 +1,5 @@
 % ----------------------------------------------------------
-% rules.pl  - Motor experto ROBUSTO (Con Fallback)
+% rules.pl  - Motor experto con sistema de lesiones MEJORADO
 % ----------------------------------------------------------
 
 :- discontiguous exercise/6.
@@ -21,33 +21,48 @@ nivel_suficiente(NivelUsuario, NivelMin) :-
 % EQUIPAMIENTO
 % ===========================
 
-% gym_completo incluye todo
 equip_compatible(gym_completo, _).
-% Si tengo mancuernas, también tengo mi cuerpo
 equip_compatible(mancuernas, peso_corporal). 
 equip_compatible(E, E).
 
 % ===========================
-% LESIONES
+% LESIONES - Sistema mejorado por categorías
 % ===========================
 
+% Sin lesiones: todo compatible
+compatible_lesion(ninguna, _).
+
+% Con lesión: evitar ejercicios contraindicados para esa categoría
 compatible_lesion(LesionUsuario, LesionContra) :-
-    LesionContra == ninguna ;
-    LesionUsuario \= LesionContra.
+    LesionUsuario \= ninguna,
+    (LesionContra == ninguna ; LesionUsuario \= LesionContra).
 
 % ===========================
-% SELECCIÓN DE EJERCICIOS (NÚCLEO)
+% SISTEMA DE VOLUMEN Y PROGRESIÓN
 % ===========================
 
-% 1. Coincidencia EXACTA
+volumen_recomendado(principiante, ganar_masa, 3, 12).
+volumen_recomendado(principiante, bajar_grasa, 3, 15).
+volumen_recomendado(principiante, fuerza, 4, 6).
+
+volumen_recomendado(intermedio, ganar_masa, 4, 10).
+volumen_recomendado(intermedio, bajar_grasa, 3, 15).
+volumen_recomendado(intermedio, fuerza, 5, 5).
+
+volumen_recomendado(avanzado, ganar_masa, 5, 8).
+volumen_recomendado(avanzado, bajar_grasa, 4, 12).
+volumen_recomendado(avanzado, fuerza, 5, 3).
+
+% ===========================
+% SELECCIÓN DE EJERCICIOS
+% ===========================
+
 ejercicio_apto(Objetivo, Nivel, Equip, Lesion, Grupo, Nombre) :-
     exercise(Nombre, Grupo, Objetivo, NivelMin, EquipReq, LesionContra),
     nivel_suficiente(Nivel, NivelMin),
     equip_compatible(Equip, EquipReq),
     compatible_lesion(Lesion, LesionContra).
 
-% 2. FALLBACK (Plan B): Si no hay exacto, usar 'ganar_masa'
-% Esto evita que la rutina venga vacía si faltan ejercicios específicos
 ejercicio_apto(Objetivo, Nivel, Equip, Lesion, Grupo, Nombre) :-
     Objetivo \= ganar_masa,
     exercise(Nombre, Grupo, ganar_masa, NivelMin, EquipReq, LesionContra),
@@ -61,11 +76,11 @@ ejercicio_apto(Objetivo, Nivel, Equip, Lesion, Grupo, Nombre) :-
 
 lista_ejercicios_aptos(O,N,E,L,Grupo,Lista) :-
     findall(Nombre, ejercicio_apto(O,N,E,L,Grupo,Nombre), ListaBruta),
-    list_to_set(ListaBruta, Lista). % Elimina duplicados del fallback
+    list_to_set(ListaBruta, Lista).
 
 elige_ejercicio_por_indice(O,N,E,L,Grupo,Dia,Nombre) :-
     lista_ejercicios_aptos(O,N,E,L,Grupo,Lista),
-    Lista \= [], % Si esto falla, Prolog devuelve "false" y la rutina sale vacía
+    Lista \= [],
     length(Lista, Len),
     I0 is (Dia - 1) mod Len,
     nth0(I0, Lista, Nombre).
@@ -74,7 +89,6 @@ elige_ejercicio_por_indice(O,N,E,L,Grupo,Dia,Nombre) :-
 % RUTINAS CON VARIACIÓN POR DÍA
 % ===========================
 
-% ----- FULLBODY -----
 rutina_fullbody_dia(O,N,E,L,Dia, [
     [pecho,   E1],
     [espalda, E2],
@@ -88,49 +102,58 @@ rutina_fullbody_dia(O,N,E,L,Dia, [
     elige_ejercicio_por_indice(O,N,E,L, hombros, Dia, E4),
     elige_ejercicio_por_indice(O,N,E,L, core,    Dia, E5).
 
-% ----- PUSH -----
 rutina_push_dia(O,N,E,L,Dia, [
     [pecho,   E1],
-    [hombros, E2],
-    [core,    E3]
+    [pecho,   E2],
+    [hombros, E3],
+    [core,    E4]
 ]) :-
     elige_ejercicio_por_indice(O,N,E,L, pecho,   Dia, E1),
-    elige_ejercicio_por_indice(O,N,E,L, hombros, Dia, E2),
-    elige_ejercicio_por_indice(O,N,E,L, core,    Dia, E3).
+    elige_ejercicio_por_indice(O,N,E,L, pecho,   (Dia+1), E2),
+    elige_ejercicio_por_indice(O,N,E,L, hombros, Dia, E3),
+    elige_ejercicio_por_indice(O,N,E,L, core,    Dia, E4).
 
-% ----- PULL -----
 rutina_pull_dia(O,N,E,L,Dia, [
     [espalda, E1],
-    [core,    E2]
+    [espalda, E2],
+    [hombros, E3],
+    [core,    E4]
 ]) :-
     elige_ejercicio_por_indice(O,N,E,L, espalda, Dia, E1),
-    elige_ejercicio_por_indice(O,N,E,L, core,    Dia, E2).
+    elige_ejercicio_por_indice(O,N,E,L, espalda, (Dia+1), E2),
+    elige_ejercicio_por_indice(O,N,E,L, hombros, Dia, E3),
+    elige_ejercicio_por_indice(O,N,E,L, core,    Dia, E4).
 
-% ----- LEGS -----
 rutina_legs_dia(O,N,E,L,Dia, [
     [piernas, E1],
-    [core,    E2]
+    [piernas, E2],
+    [piernas, E3],
+    [core,    E4]
 ]) :-
     elige_ejercicio_por_indice(O,N,E,L, piernas, Dia, E1),
-    elige_ejercicio_por_indice(O,N,E,L, core,    Dia, E2).
+    elige_ejercicio_por_indice(O,N,E,L, piernas, (Dia+1), E2),
+    elige_ejercicio_por_indice(O,N,E,L, piernas, (Dia+2), E3),
+    elige_ejercicio_por_indice(O,N,E,L, core,    Dia, E4).
 
-% ----- UPPER -----
 rutina_upper_dia(O,N,E,L,Dia, [
     [pecho,   E1],
     [espalda, E2],
-    [hombros, E3]
+    [hombros, E3],
+    [core,    E4]
 ]) :-
     elige_ejercicio_por_indice(O,N,E,L, pecho,   Dia, E1),
     elige_ejercicio_por_indice(O,N,E,L, espalda, Dia, E2),
-    elige_ejercicio_por_indice(O,N,E,L, hombros, Dia, E3).
+    elige_ejercicio_por_indice(O,N,E,L, hombros, Dia, E3),
+    elige_ejercicio_por_indice(O,N,E,L, core,    Dia, E4).
 
-% ----- LOWER -----
 rutina_lower_dia(O,N,E,L,Dia, [
     [piernas, E1],
-    [core,    E2]
+    [piernas, E2],
+    [core,    E3]
 ]) :-
     elige_ejercicio_por_indice(O,N,E,L, piernas, Dia, E1),
-    elige_ejercicio_por_indice(O,N,E,L, core,    Dia, E2).
+    elige_ejercicio_por_indice(O,N,E,L, piernas, (Dia+1), E2),
+    elige_ejercicio_por_indice(O,N,E,L, core,    Dia, E3).
 
 % ===========================
 % PLANIFICACIÓN
@@ -169,8 +192,9 @@ generar_rutina(O,N,Dias,L,E,RutinaSemana) :-
     integer(Dias),
     Dias >= 1,
     Dias =< 6,
+    volumen_recomendado(N, O, Series, Reps),
     findall(
-        [D, RutinaDia],
+        [D, RutinaDia, Series, Reps],
         (
             between(1, Dias, D),
             rutina_para_dia(O,N,Dias,L,E,D,RutinaDia)

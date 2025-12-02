@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial - GymBot AI</title>
+    
+    <!-- Bootstrap 5.3 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --accent-color: #818cf8;
+            --bg-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            font-family: 'Poppins', sans-serif;
+            color: #1f2937;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        .main-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h2 {
+            font-weight: 700;
+            color: #111827;
+            letter-spacing: -0.5px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            background: transparent;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .history-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        .history-date {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .history-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .detail-badge {
+            background: #f3f4f6;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #4b5563;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #d1d5db;
+            margin-bottom: 20px;
+        }
+
+        .clear-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .clear-btn:hover {
+            background: #dc2626;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-up {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container main-container">
+
+    <!-- Header -->
+    <div class="header">
+        <h2><i class="bi bi-clock-history me-2"></i>Historial de Rutinas</h2>
+        <p class="text-muted">Registro de todas las rutinas generadas</p>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/" class="back-btn">
+            <i class="bi bi-arrow-left me-1"></i> Volver al Inicio
+        </a>
+        
+        {% if historial %}
+        <button onclick="limpiarHistorial()" class="clear-btn">
+            <i class="bi bi-trash me-1"></i> Limpiar Historial
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Contenido del historial -->
+    {% if historial %}
+    <div class="glass-card animate-up">
+        <h5 class="fw-bold mb-4">
+            <i class="bi bi-list-ul me-2 text-primary"></i>
+            {{ historial|length }} rutina{% if historial|length != 1 %}s{% endif %} generada{% if historial|length != 1 %}s{% endif %}
+        </h5>
+        
+        {% for entry in historial|reverse %}
+        <div class="history-item">
+            <div class="history-header">
+                <div class="history-date">
+                    <i class="bi bi-calendar-event me-1"></i>
+                    {{ entry.fecha|truncate(10, True, '') }}
+                </div>
+                <span class="text-muted small">
+                    {{ entry.fecha[11:16] }}
+                </span>
+            </div>
+            
+            <div class="history-details">
+                <span class="detail-badge">
+                    <i class="bi bi-bullseye me-1"></i>
+                    {{ entry.objetivo|replace('_', ' ')|capitalize }}
+                </span>
+                <span class="detail-badge">
+                    <i class="bi bi-bar-chart-line me-1"></i>
+                    {{ entry.nivel|capitalize }}
+                </span>
+                <span class="detail-badge">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    {{ entry.dias }} días/sem
+                </span>
+                <span class="detail-badge">
+                    <i class="bi bi-box-seam me-1"></i>
+                    {{ entry.equip|replace('_', ' ')|capitalize }}
+                </span>
+                {% if entry.lesion != 'ninguna' %}
+                <span class="detail-badge">
+                    <i class="bi bi-bandaid me-1"></i>
+                    Lesión: {{ entry.lesion|capitalize }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Estado vacío -->
+    <div class="glass-card animate-up">
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <h4 class="mb-3">No hay rutinas generadas aún</h4>
+            <p class="text-muted mb-4">
+                Genera tu primera rutina personalizada para empezar a trackear tu progreso
+            </p>
+            <a href="/" class="btn btn-primary" style="background: var(--primary-color); border: none; padding: 10px 24px; border-radius: 10px;">
+                <i class="bi bi-plus-circle me-2"></i>Generar Primera Rutina
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    async function limpiarHistorial() {
+        if (confirm('¿Estás seguro de que quieres eliminar todo el historial?')) {
+            try {
+                const response = await fetch('/clear_historial', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Error al limpiar el historial');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al limpiar el historial');
+            }
+        }
+    }
+</script>
+
+</body>
+</html>

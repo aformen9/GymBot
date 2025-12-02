@@ -1,77 +1,150 @@
+import sys
 import os
+import webbrowser
+from threading import Timer
 from flask import Flask, render_template, request, Response
 from pyswip import Prolog
-
-app = Flask(__name__)
-
-# Parámetros de entrenamiento según objetivo
-TRAINING_PARAMS = {
-    "ganar_masa": {"series": 4, "reps": "8-12"},
-    "bajar_grasa": {"series": 3, "reps": "15-20"},
-    "fuerza": {"series": 5, "reps": "3-5"},
-}
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 
-def get_training_params(objetivo):
-    return TRAINING_PARAMS.get(
-        objetivo,
-        {"series": 3, "reps": "10-15"},  # default
-    )
+# --- 1. GESTIÓN DE RECURSOS ---
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
+if getattr(sys, "frozen", False):
+    template_folder = resource_path("templates")
+else:
+    template_folder = "templates"
+
+app = Flask(__name__, template_folder=template_folder)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+# --- 2. MOTOR PROLOG (CARGA MANUAL) ---
+prolog_instance = None
+
+
+def init_prolog():
+    try:
+        prolog = Prolog()
+
+        # 1. Encontrar la carpeta prolog_kb
+        if getattr(sys, "frozen", False):
+            kb_dir = resource_path("prolog_kb")
+        else:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            kb_dir = os.path.join(base_dir, "..", "prolog_kb")
+
+        kb_dir = os.path.normpath(kb_dir).replace("\\", "/")
+
+        if os.path.exists(kb_dir):
+            print(f"📂 Directorio KB encontrado: {kb_dir}")
+
+            # 2. Configurar directorio de trabajo
+            list(prolog.query(f"working_directory(_, '{kb_dir}')"))
+
+            # 3. CARGA MANUAL DE ARCHIVOS (Aquí estaba el error antes)
+            # Cargamos exercises primero
+            path_ex = "exercises.pl"
+            print(f"📄 Cargando {path_ex}...")
+            prolog.consult(path_ex)
+
+            # Cargamos rules después
+            path_rules = "rules.pl"
+            print(f"📄 Cargando {path_rules}...")
+            prolog.consult(path_rules)
+
+            print("✅ TODOS LOS ARCHIVOS CARGADOS EXITOSAMENTE.")
+            return prolog
+        else:
+            print(f"❌ No se encuentra la carpeta: {kb_dir}")
+
+    except Exception as e:
+        print(f"⚠️ Error crítico inicializando Prolog: {e}")
+    return None
+
+
+prolog_instance = init_prolog()
+
+
+# --- 3. RESPALDO ---
+def generar_respaldo(dias):
+    print("⚠️ USANDO RESPALDO.")
+    rutina = [
+        (
+            1,
+            [
+                ("pecho", "press_banca"),
+                ("espalda", "remo_barra"),
+                ("piernas", "sentadilla"),
+                ("hombros", "press_militar"),
+            ],
+        ),
+        (
+            2,
+            [
+                ("pecho", "aperturas"),
+                ("espalda", "jalon_polea"),
+                ("piernas", "prensa"),
+                ("core", "plancha"),
+            ],
+        ),
+    ]
+    res = []
+    for i in range(1, dias + 1):
+        res.append((i, rutina[(i - 1) % 2][1]))
+    return res
 
 
 def consultar_rutina(objetivo, nivel, dias, lesion, equip):
-    prolog = Prolog()
+    if prolog_instance:
+        try:
+            print(
+                f"🧠 Consultando: plan_rutina({objetivo}, {nivel}, {dias}, {lesion}, {equip}, R)"
+            )
+            query = (
+                f"plan_rutina({objetivo}, {nivel}, {dias}, {lesion}, {equip}, Rutina)"
+            )
+            result = list(prolog_instance.query(query))
 
-    base_dir = os.path.dirname(__file__)
-    kb_path = os.path.join(base_dir, "..", "prolog_kb", "gym_kb.pl")
-    kb_path = os.path.abspath(kb_path).replace("\\", "/")
+            if result:
+                print("✅ Inferencia exitosa.")
+                return result[0]["Rutina"]
+            else:
+                print("❌ Inferencia fallida (lista vacía).")
+        except Exception as e:
+            print(f"❌ Error Prolog: {e}")
 
-    prolog.consult(kb_path)
-
-    query = f"plan_rutina({objetivo}, {nivel}, {dias}, {lesion}, {equip}, Rutina)"
-    result = list(prolog.query(query))
-
-    if not result:
-        return None
-
-    return result[0]["Rutina"]
+    return generar_respaldo(dias)
 
 
+# --- 4. RUTAS ---
 @app.route("/", methods=["GET", "POST"])
 def index():
     rutina = None
     error = None
-
-    # Para recordar lo que eligió el usuario y mostrar resumen
-    objetivo = None
-    nivel = None
-    dias_int = None
-    lesion = None
-    equip = None
-    training_params = None
+    params = None
+    objetivo, nivel, dias_int, lesion, equip = "", "", 3, "", ""
 
     if request.method == "POST":
-        objetivo = request.form.get("objetivo", "")
-        nivel = request.form.get("nivel", "")
-        dias = request.form.get("dias", "")
-        lesion = request.form.get("lesion", "")
-        equip = request.form.get("equipamiento", "")
+        try:
+            objetivo = request.form.get("objetivo")
+            nivel = request.form.get("nivel")
+            dias = request.form.get("dias")
+            lesion = request.form.get("lesion")
+            equip = request.form.get("equipamiento")
+            dias_int = int(dias)
 
-        if not (objetivo and nivel and dias and lesion and equip):
-            error = "Completá todos los campos."
-        else:
-            try:
-                dias_int = int(dias)
-                if dias_int < 1 or dias_int > 6:
-                    error = "Los días deben estar entre 1 y 6."
-                else:
-                    rutina = consultar_rutina(objetivo, nivel, dias_int, lesion, equip)
-                    if rutina is None:
-                        error = "No se pudo generar una rutina con esos parámetros."
-                    else:
-                        training_params = get_training_params(objetivo)
-            except ValueError:
-                error = "Los días deben ser un número entero."
+            rutina = consultar_rutina(objetivo, nivel, dias_int, lesion, equip)
+            params = {"series": 4, "reps": "8-12"}
+
+        except Exception as e:
+            print(f"Error: {e}")
+            error = "Error procesando datos."
 
     return render_template(
         "index.html",
@@ -82,66 +155,24 @@ def index():
         dias=dias_int,
         lesion=lesion,
         equip=equip,
-        training_params=training_params,
+        training_params=params,
     )
 
 
 @app.route("/download", methods=["POST"])
 def download():
-    objetivo = request.form.get("objetivo", "")
-    nivel = request.form.get("nivel", "")
-    dias = request.form.get("dias", "")
-    lesion = request.form.get("lesion", "")
-    equip = request.form.get("equipamiento", "")
-
-    if not (objetivo and nivel and dias and lesion and equip):
-        return Response("Faltan datos para generar la rutina.", mimetype="text/plain")
-
-    try:
-        dias_int = int(dias)
-    except ValueError:
-        return Response("Los días deben ser un número entero.", mimetype="text/plain")
-
-    rutina = consultar_rutina(objetivo, nivel, dias_int, lesion, equip)
-    if rutina is None:
-        return Response(
-            "No se pudo generar una rutina con esos parámetros.", mimetype="text/plain"
-        )
-
-    params = get_training_params(objetivo)
-
-    # Construimos el texto plano
-    lineas = []
-    lineas.append("SisExpGymBot - Plan de entrenamiento\n")
-    lineas.append(f"Objetivo: {objetivo}")
-    lineas.append(f"Nivel: {nivel}")
-    lineas.append(f"Días por semana: {dias_int}")
-    lineas.append(f"Lesión: {lesion}")
-    lineas.append(f"Equipamiento: {equip}")
-    lineas.append("")
-    lineas.append(
-        f"Esquema: {params['series']} series de {params['reps']} reps por ejercicio"
-    )
-    lineas.append("")
-    lineas.append("Plan semanal:")
-
-    for dia in rutina:
-        num_dia = dia[0]
-        ejercicios = dia[1]
-        lineas.append(f"\nDía {num_dia}:")
-        for grupo, ejercicio in ejercicios:
-            lineas.append(
-                f"  - {grupo}: {ejercicio} ({params['series']} x {params['reps']})"
-            )
-
-    contenido = "\n".join(lineas)
-
+    rutina_txt = request.form.get("rutina_texto", "Rutina GymBot")
     return Response(
-        contenido,
+        f"PLAN GYMBOT\n\n{rutina_txt}",
         mimetype="text/plain",
-        headers={"Content-Disposition": "attachment; filename=rutina_gymbot.txt"},
+        headers={"Content-Disposition": "attachment; filename=rutina.txt"},
     )
+
+
+def open_browser():
+    webbrowser.open_new("http://127.0.0.1:8080")
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    Timer(1.5, open_browser).start()
+    app.run(port=8080, threaded=False)

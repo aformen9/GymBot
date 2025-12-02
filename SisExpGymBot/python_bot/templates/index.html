@@ -2,162 +2,382 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SisExpGymBot Web</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymBot AI</title>
+    
+    <!-- Bootstrap 5.3 & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            --primary-color: #4f46e5; /* Índigo moderno */
+            --primary-hover: #4338ca;
+            --accent-color: #818cf8;
+            --bg-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+            --halo-color: rgba(79, 70, 229, 0.25);
+        }
+
         body {
+            background: var(--bg-gradient);
+            font-family: 'Poppins', sans-serif;
+            color: #1f2937;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        .main-container {
+            max-width: 900px;
+            margin: 40px auto;
+        }
+
+        /* Header Styles */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+        
+        .header h2 {
+            font-weight: 700;
+            color: #111827;
+            letter-spacing: -0.5px;
+        }
+
+        .header .badge-ai {
+            background: var(--primary-color);
+            color: white;
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            vertical-align: middle;
+            margin-left: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Card Styles */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            padding: 30px;
+            transition: transform 0.2s ease;
+        }
+
+        /* Form Controls & THE HALO EFFECT */
+        .form-label {
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .form-select, .form-control {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px 15px;
+            font-size: 0.95rem;
+            color: #1f2937;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: #f9fafb;
+        }
+
+        .form-select:hover, .form-control:hover {
+            border-color: #c7d2fe;
+            background-color: #fff;
+        }
+
+        /* El Halo Moderno */
+        .form-select:focus, .form-control:focus {
+            border-color: var(--primary-color);
+            background-color: #fff;
+            box-shadow: 0 0 0 4px var(--halo-color); /* Anillo de luz */
+            outline: none;
+        }
+
+        /* Buttons */
+        .btn-primary-custom {
+            background: var(--primary-color);
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-primary-custom:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.4);
+        }
+
+        /* Results Section */
+        .summary-card {
+            background: #fff;
+            border-left: 5px solid var(--primary-color);
+            border-radius: 12px;
             padding: 20px;
-            background: #f5f5f5;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
-        .container {
-            max-width: 850px;
-        }
+
         .rutina-dia {
             background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .header {
-            background: #0275d8;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
+            border-radius: 16px;
+            padding: 20px;
             margin-bottom: 20px;
+            border: 1px solid #f3f4f6;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .rutina-dia:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .dia-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f3f4f6;
+            padding-bottom: 10px;
+        }
+
+        .dia-badge {
+            background: #e0e7ff;
+            color: var(--primary-color);
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 8px;
+            margin-right: 10px;
+        }
+
+        .exercise-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .exercise-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        
+        .exercise-item:last-child {
+            border-bottom: none;
+        }
+
+        .exercise-icon {
+            color: var(--accent-color);
+            margin-right: 10px;
+            margin-top: 3px;
+        }
+        
+        /* Animación de entrada */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-up {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .param-tag {
+            display: inline-block;
+            background: #f3f4f6;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            color: #4b5563;
         }
     </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="container main-container">
 
+    <!-- Header -->
     <div class="header">
-        <h2>SisExpGymBot Web</h2>
-        <p>Generador inteligente de rutinas personalizadas</p>
+        <h2>GymBot <span class="badge-ai">AI BETA</span></h2>
+        <p class="text-muted">Sistema Experto de Entrenamiento Personalizado</p>
     </div>
 
+    <!-- Alertas -->
     {% if error %}
-        <div class="alert alert-danger">
-            {{ error }}
+        <div class="alert alert-danger d-flex align-items-center rounded-3 shadow-sm animate-up" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>{{ error }}</div>
         </div>
     {% endif %}
 
-    <form method="POST" class="card p-4 mb-4">
+    <!-- Formulario Principal -->
+    <form method="POST" class="glass-card mb-5 animate-up">
+        <h4 class="mb-4 fw-bold"><i class="bi bi-sliders me-2 text-primary"></i>Configuración</h4>
 
-        <h4>Completá tus datos</h4>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Objetivo</label>
-                <select name="objetivo" class="form-select" required>
-                    <option value="">Elegí...</option>
-                    <option value="ganar_masa">Ganar masa</option>
-                    <option value="bajar_grasa">Bajar grasa</option>
-                    <option value="fuerza">Fuerza</option>
-                </select>
+        <div class="row g-4">
+            <!-- Objetivo -->
+            <div class="col-md-6">
+                <label class="form-label">Objetivo Principal</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-bullseye text-primary"></i></span>
+                    <select name="objetivo" class="form-select border-start-0 ps-0" required>
+                        <option value="" selected disabled>Seleccionar...</option>
+                        <option value="ganar_masa">Ganar Masa Muscular</option>
+                        <option value="bajar_grasa">Bajar Grasa / Definir</option>
+                        <option value="fuerza">Ganar Fuerza</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Nivel</label>
-                <select name="nivel" class="form-select" required>
-                    <option value="">Elegí...</option>
-                    <option value="principiante">Principiante</option>
-                    <option value="intermedio">Intermedio</option>
-                    <option value="avanzado">Avanzado</option>
-                </select>
+            <!-- Nivel -->
+            <div class="col-md-6">
+                <label class="form-label">Nivel de Experiencia</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-bar-chart-line text-primary"></i></span>
+                    <select name="nivel" class="form-select border-start-0 ps-0" required>
+                        <option value="" selected disabled>Seleccionar...</option>
+                        <option value="principiante">Principiante (0-1 años)</option>
+                        <option value="intermedio">Intermedio (1-3 años)</option>
+                        <option value="avanzado">Avanzado (+3 años)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Días -->
+            <div class="col-md-4">
+                <label class="form-label">Frecuencia Semanal</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-calendar-check text-primary"></i></span>
+                    <input type="number" name="dias" class="form-control border-start-0 ps-0" min="1" max="6" placeholder="1-6 días" required>
+                </div>
+            </div>
+
+            <!-- Lesión -->
+            <div class="col-md-4">
+                <label class="form-label">Limitaciones / Lesiones</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-bandaid text-danger"></i></span>
+                    <select name="lesion" class="form-select border-start-0 ps-0" required>
+                        <option value="ninguna">Ninguna</option>
+                        <option value="espalda">Dolor de Espalda</option>
+                        <option value="rodilla">Dolor de Rodilla</option>
+                        <option value="hombro">Dolor de Hombro</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Equipamiento -->
+            <div class="col-md-4">
+                <label class="form-label">Equipamiento Disponible</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-box-seam text-primary"></i></span>
+                    <select name="equipamiento" class="form-select border-start-0 ps-0" required>
+                        <option value="" selected disabled>Seleccionar...</option>
+                        <option value="peso_corporal">Solo Peso Corporal</option>
+                        <option value="mancuernas">Mancuernas en Casa</option>
+                        <option value="gym_completo">Gimnasio Completo</option>
+                    </select>
+                </div>
             </div>
         </div>
 
-        <div class="row">
-
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Días por semana</label>
-                <input type="number" name="dias" class="form-control" min="1" max="6" required>
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Lesión</label>
-                <select name="lesion" class="form-select" required>
-                    <option value="ninguna">Ninguna</option>
-                    <option value="espalda">Espalda</option>
-                    <option value="rodilla">Rodilla</option>
-                    <option value="hombro">Hombro</option>
-                </select>
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Equipamiento</label>
-                <select name="equipamiento" class="form-select" required>
-                    <option value="">Elegí...</option>
-                    <option value="peso_corporal">Peso corporal</option>
-                    <option value="mancuernas">Mancuernas</option>
-                    <option value="gym_completo">Gym completo</option>
-                </select>
-            </div>
+        <div class="mt-4">
+            <button class="btn btn-primary btn-primary-custom text-white">
+                <i class="bi bi-cpu-fill me-2"></i> Generar Rutina Inteligente
+            </button>
         </div>
-
-        <button class="btn btn-primary mt-2">Generar rutina</button>
     </form>
 
 
     {% if rutina %}
-    <h3 class="mb-3">Plan semanal</h3>
-
-    {% if objetivo and nivel and dias and lesion and equip %}
-        <div class="card mb-3 p-3">
-            <h5>Resumen de configuración</h5>
-            <ul>
-                <li>Objetivo: <strong>{{ objetivo }}</strong></li>
-                <li>Nivel: <strong>{{ nivel }}</strong></li>
-                <li>Días por semana: <strong>{{ dias }}</strong></li>
-                <li>Lesión: <strong>{{ lesion }}</strong></li>
-                <li>Equipamiento: <strong>{{ equip }}</strong></li>
-            </ul>
-            {% if training_params %}
-                <p>
-                    Esquema sugerido: 
-                    <strong>{{ training_params.series }} series</strong> de 
-                    <strong>{{ training_params.reps }} repeticiones</strong> por ejercicio.
-                </p>
-            {% endif %}
-
-            <!-- Botón para descargar rutina -->
-            <form method="POST" action="/download" class="mt-2">
+    
+    <!-- Sección de Resultados -->
+    <div class="animate-up" style="animation-delay: 0.2s;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold mb-0">Tu Plan Semanal</h3>
+            <!-- Botón de descarga -->
+            <form method="POST" action="/download">
                 <input type="hidden" name="objetivo" value="{{ objetivo }}">
                 <input type="hidden" name="nivel" value="{{ nivel }}">
                 <input type="hidden" name="dias" value="{{ dias }}">
                 <input type="hidden" name="lesion" value="{{ lesion }}">
                 <input type="hidden" name="equipamiento" value="{{ equip }}">
-                <button type="submit" class="btn btn-success">
-                    Descargar rutina en .txt
+                <input type="hidden" name="rutina_texto" value="{{ rutina }}"> <!-- Necesario para el backend actual -->
+                <button type="submit" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                    <i class="bi bi-download me-1"></i> Descargar .txt
                 </button>
             </form>
         </div>
-    {% endif %}
 
-    {% for dia in rutina %}
-        <div class="rutina-dia">
-            <h5>Día {{ dia[0] }}</h5>
-            <ul>
-                {% for grupo, ejercicio in dia[1] %}
-                    <li>
-                        <strong>{{ grupo }}:</strong> {{ ejercicio }}
-                        {% if training_params %}
-                            — {{ training_params.series }} series de {{ training_params.reps }} reps
-                        {% endif %}
-                    </li>
-                {% endfor %}
-            </ul>
+        <!-- Resumen de parámetros -->
+        {% if objetivo and nivel and dias %}
+            <div class="summary-card">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="bi bi-info-circle-fill text-primary me-2"></i>
+                    <h5 class="mb-0 fw-bold">Parámetros del modelo</h5>
+                </div>
+                <div class="mb-3">
+                    <span class="param-tag"><i class="bi bi-crosshair me-1"></i>{{ objetivo|replace('_', ' ')|capitalize }}</span>
+                    <span class="param-tag"><i class="bi bi-ladder me-1"></i>{{ nivel|capitalize }}</span>
+                    <span class="param-tag"><i class="bi bi-calendar3 me-1"></i>{{ dias }} días/sem</span>
+                    <span class="param-tag"><i class="bi bi-tools me-1"></i>{{ equip|replace('_', ' ')|capitalize }}</span>
+                </div>
+                {% if training_params %}
+                    <p class="mb-0 text-muted small border-top pt-2 mt-2">
+                        <i class="bi bi-lightbulb-fill text-warning me-1"></i>
+                        <strong>Recomendación técnica:</strong> Realizar 
+                        <span class="text-dark fw-bold">{{ training_params.series }} series</span> de 
+                        <span class="text-dark fw-bold">{{ training_params.reps }} repeticiones</span> por ejercicio.
+                    </p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <!-- Tarjetas de Rutina -->
+        <div class="row">
+        {% for dia in rutina %}
+            <div class="col-md-6 col-lg-12">
+                <div class="rutina-dia">
+                    <div class="dia-header">
+                        <span class="dia-badge">DÍA {{ dia[0] }}</span>
+                        <span class="text-muted small ms-auto">Sesión completa</span>
+                    </div>
+                    <ul class="exercise-list">
+                        {% for grupo, ejercicio in dia[1] %}
+                            <li class="exercise-item">
+                                <i class="bi bi-check-circle-fill exercise-icon"></i>
+                                <div>
+                                    <strong class="text-uppercase text-secondary" style="font-size: 0.75rem; letter-spacing: 0.5px;">{{ grupo }}</strong>
+                                    <div class="fw-bold text-dark">{{ ejercicio|replace('_', ' ')|capitalize }}</div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endfor %}
         </div>
-    {% endfor %}
-{% endif %}
-
+    </div>
+    {% endif %}
 
 </div>
 
+<!-- Scripts de Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

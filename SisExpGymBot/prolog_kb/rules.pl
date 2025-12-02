@@ -1,5 +1,5 @@
 % ----------------------------------------------------------
-% rules.pl  - Motor experto de selección de rutinas (completo)
+% rules.pl  - Motor experto ROBUSTO (Con Fallback)
 % ----------------------------------------------------------
 
 :- discontiguous exercise/6.
@@ -21,8 +21,10 @@ nivel_suficiente(NivelUsuario, NivelMin) :-
 % EQUIPAMIENTO
 % ===========================
 
-% gym_completo sirve para todo
+% gym_completo incluye todo
 equip_compatible(gym_completo, _).
+% Si tengo mancuernas, también tengo mi cuerpo
+equip_compatible(mancuernas, peso_corporal). 
 equip_compatible(E, E).
 
 % ===========================
@@ -34,33 +36,36 @@ compatible_lesion(LesionUsuario, LesionContra) :-
     LesionUsuario \= LesionContra.
 
 % ===========================
-% SELECCIÓN DE EJERCICIOS
+% SELECCIÓN DE EJERCICIOS (NÚCLEO)
 % ===========================
 
+% 1. Coincidencia EXACTA
 ejercicio_apto(Objetivo, Nivel, Equip, Lesion, Grupo, Nombre) :-
     exercise(Nombre, Grupo, Objetivo, NivelMin, EquipReq, LesionContra),
     nivel_suficiente(Nivel, NivelMin),
     equip_compatible(Equip, EquipReq),
     compatible_lesion(Lesion, LesionContra).
 
-elige_ejercicio(O,N,E,L, Grupo, Nombre) :-
-    ejercicio_apto(O,N,E,L, Grupo, Nombre),
-    !.
+% 2. FALLBACK (Plan B): Si no hay exacto, usar 'ganar_masa'
+% Esto evita que la rutina venga vacía si faltan ejercicios específicos
+ejercicio_apto(Objetivo, Nivel, Equip, Lesion, Grupo, Nombre) :-
+    Objetivo \= ganar_masa,
+    exercise(Nombre, Grupo, ganar_masa, NivelMin, EquipReq, LesionContra),
+    nivel_suficiente(Nivel, NivelMin),
+    equip_compatible(Equip, EquipReq),
+    compatible_lesion(Lesion, LesionContra).
 
 % ===========================
-% VARIACIÓN → lista de ejercicios y selección por índice/día
+% VARIACIÓN
 % ===========================
 
 lista_ejercicios_aptos(O,N,E,L,Grupo,Lista) :-
-    findall(
-        Nombre,
-        ejercicio_apto(O,N,E,L,Grupo,Nombre),
-        Lista
-    ).
+    findall(Nombre, ejercicio_apto(O,N,E,L,Grupo,Nombre), ListaBruta),
+    list_to_set(ListaBruta, Lista). % Elimina duplicados del fallback
 
 elige_ejercicio_por_indice(O,N,E,L,Grupo,Dia,Nombre) :-
     lista_ejercicios_aptos(O,N,E,L,Grupo,Lista),
-    Lista \= [],
+    Lista \= [], % Si esto falla, Prolog devuelve "false" y la rutina sale vacía
     length(Lista, Len),
     I0 is (Dia - 1) mod Len,
     nth0(I0, Lista, Nombre).
@@ -128,36 +133,27 @@ rutina_lower_dia(O,N,E,L,Dia, [
     elige_ejercicio_por_indice(O,N,E,L, core,    Dia, E2).
 
 % ===========================
-% PLANIFICACIÓN SEGÚN CANTIDAD DE DÍAS
+% PLANIFICACIÓN
 % ===========================
 
-% 1 día → Fullbody
-rutina_para_dia(O,N,1,L,E, Dia, R) :-
-    rutina_fullbody_dia(O,N,E,L,Dia,R).
+rutina_para_dia(O,N,1,L,E, Dia, R) :- rutina_fullbody_dia(O,N,E,L,Dia,R).
+rutina_para_dia(O,N,2,L,E, Dia, R) :- rutina_fullbody_dia(O,N,E,L,Dia,R).
 
-% 2 días → Fullbody + Fullbody variado
-rutina_para_dia(O,N,2,L,E, Dia, R) :-
-    rutina_fullbody_dia(O,N,E,L,Dia,R).
-
-% 3 días → Push / Pull / Legs
 rutina_para_dia(O,N,3,L,E, 1, R) :- rutina_push_dia(O,N,E,L,1,R).
 rutina_para_dia(O,N,3,L,E, 2, R) :- rutina_pull_dia(O,N,E,L,2,R).
 rutina_para_dia(O,N,3,L,E, 3, R) :- rutina_legs_dia(O,N,E,L,3,R).
 
-% 4 días → Upper / Lower / Upper / Lower
 rutina_para_dia(O,N,4,L,E, 1, R) :- rutina_upper_dia(O,N,E,L,1,R).
 rutina_para_dia(O,N,4,L,E, 2, R) :- rutina_lower_dia(O,N,E,L,2,R).
 rutina_para_dia(O,N,4,L,E, 3, R) :- rutina_upper_dia(O,N,E,L,3,R).
 rutina_para_dia(O,N,4,L,E, 4, R) :- rutina_lower_dia(O,N,E,L,4,R).
 
-% 5 días → Push / Pull / Legs / Upper / Fullbody
 rutina_para_dia(O,N,5,L,E, 1, R) :- rutina_push_dia(O,N,E,L,1,R).
 rutina_para_dia(O,N,5,L,E, 2, R) :- rutina_pull_dia(O,N,E,L,2,R).
 rutina_para_dia(O,N,5,L,E, 3, R) :- rutina_legs_dia(O,N,E,L,3,R).
 rutina_para_dia(O,N,5,L,E, 4, R) :- rutina_upper_dia(O,N,E,L,4,R).
 rutina_para_dia(O,N,5,L,E, 5, R) :- rutina_fullbody_dia(O,N,E,L,5,R).
 
-% 6 días → Push / Pull / Legs / Push / Pull / Legs
 rutina_para_dia(O,N,6,L,E, 1, R) :- rutina_push_dia(O,N,E,L,1,R).
 rutina_para_dia(O,N,6,L,E, 2, R) :- rutina_pull_dia(O,N,E,L,2,R).
 rutina_para_dia(O,N,6,L,E, 3, R) :- rutina_legs_dia(O,N,E,L,3,R).

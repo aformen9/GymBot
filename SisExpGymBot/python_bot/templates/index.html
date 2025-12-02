@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SisExpGymBot Web</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 850px;
+        }
+        .rutina-dia {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: #0275d8;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h2>SisExpGymBot Web</h2>
+        <p>Generador inteligente de rutinas personalizadas</p>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <form method="POST" class="card p-4 mb-4">
+
+        <h4>Completá tus datos</h4>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Objetivo</label>
+                <select name="objetivo" class="form-select" required>
+                    <option value="">Elegí...</option>
+                    <option value="ganar_masa">Ganar masa</option>
+                    <option value="bajar_grasa">Bajar grasa</option>
+                    <option value="fuerza">Fuerza</option>
+                </select>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nivel</label>
+                <select name="nivel" class="form-select" required>
+                    <option value="">Elegí...</option>
+                    <option value="principiante">Principiante</option>
+                    <option value="intermedio">Intermedio</option>
+                    <option value="avanzado">Avanzado</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Días por semana</label>
+                <input type="number" name="dias" class="form-control" min="1" max="6" required>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Lesión</label>
+                <select name="lesion" class="form-select" required>
+                    <option value="ninguna">Ninguna</option>
+                    <option value="espalda">Espalda</option>
+                    <option value="rodilla">Rodilla</option>
+                    <option value="hombro">Hombro</option>
+                </select>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Equipamiento</label>
+                <select name="equipamiento" class="form-select" required>
+                    <option value="">Elegí...</option>
+                    <option value="peso_corporal">Peso corporal</option>
+                    <option value="mancuernas">Mancuernas</option>
+                    <option value="gym_completo">Gym completo</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-primary mt-2">Generar rutina</button>
+    </form>
+
+
+    {% if rutina %}
+    <h3 class="mb-3">Plan semanal</h3>
+
+    {% if objetivo and nivel and dias and lesion and equip %}
+        <div class="card mb-3 p-3">
+            <h5>Resumen de configuración</h5>
+            <ul>
+                <li>Objetivo: <strong>{{ objetivo }}</strong></li>
+                <li>Nivel: <strong>{{ nivel }}</strong></li>
+                <li>Días por semana: <strong>{{ dias }}</strong></li>
+                <li>Lesión: <strong>{{ lesion }}</strong></li>
+                <li>Equipamiento: <strong>{{ equip }}</strong></li>
+            </ul>
+            {% if training_params %}
+                <p>
+                    Esquema sugerido: 
+                    <strong>{{ training_params.series }} series</strong> de 
+                    <strong>{{ training_params.reps }} repeticiones</strong> por ejercicio.
+                </p>
+            {% endif %}
+
+            <!-- Botón para descargar rutina -->
+            <form method="POST" action="/download" class="mt-2">
+                <input type="hidden" name="objetivo" value="{{ objetivo }}">
+                <input type="hidden" name="nivel" value="{{ nivel }}">
+                <input type="hidden" name="dias" value="{{ dias }}">
+                <input type="hidden" name="lesion" value="{{ lesion }}">
+                <input type="hidden" name="equipamiento" value="{{ equip }}">
+                <button type="submit" class="btn btn-success">
+                    Descargar rutina en .txt
+                </button>
+            </form>
+        </div>
+    {% endif %}
+
+    {% for dia in rutina %}
+        <div class="rutina-dia">
+            <h5>Día {{ dia[0] }}</h5>
+            <ul>
+                {% for grupo, ejercicio in dia[1] %}
+                    <li>
+                        <strong>{{ grupo }}:</strong> {{ ejercicio }}
+                        {% if training_params %}
+                            — {{ training_params.series }} series de {{ training_params.reps }} reps
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endfor %}
+{% endif %}
+
+
+</div>
+
+</body>
+</html>

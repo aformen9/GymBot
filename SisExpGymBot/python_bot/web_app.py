@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, Response
 from pyswip import Prolog
 
 app = Flask(__name__)
@@ -11,10 +11,11 @@ TRAINING_PARAMS = {
     "fuerza": {"series": 5, "reps": "3-5"},
 }
 
+
 def get_training_params(objetivo):
     return TRAINING_PARAMS.get(
         objetivo,
-        {"series": 3, "reps": "10-15"}  # default
+        {"series": 3, "reps": "10-15"},  # default
     )
 
 
@@ -32,7 +33,7 @@ def consultar_rutina(objetivo, nivel, dias, lesion, equip):
 
     if not result:
         return None
-    
+
     return result[0]["Rutina"]
 
 
@@ -84,6 +85,7 @@ def index():
         training_params=training_params,
     )
 
+
 @app.route("/download", methods=["POST"])
 def download():
     objetivo = request.form.get("objetivo", "")
@@ -102,7 +104,9 @@ def download():
 
     rutina = consultar_rutina(objetivo, nivel, dias_int, lesion, equip)
     if rutina is None:
-        return Response("No se pudo generar una rutina con esos parámetros.", mimetype="text/plain")
+        return Response(
+            "No se pudo generar una rutina con esos parámetros.", mimetype="text/plain"
+        )
 
     params = get_training_params(objetivo)
 
@@ -115,7 +119,9 @@ def download():
     lineas.append(f"Lesión: {lesion}")
     lineas.append(f"Equipamiento: {equip}")
     lineas.append("")
-    lineas.append(f"Esquema: {params['series']} series de {params['reps']} reps por ejercicio")
+    lineas.append(
+        f"Esquema: {params['series']} series de {params['reps']} reps por ejercicio"
+    )
     lineas.append("")
     lineas.append("Plan semanal:")
 
@@ -124,18 +130,17 @@ def download():
         ejercicios = dia[1]
         lineas.append(f"\nDía {num_dia}:")
         for grupo, ejercicio in ejercicios:
-            lineas.append(f"  - {grupo}: {ejercicio} ({params['series']} x {params['reps']})")
+            lineas.append(
+                f"  - {grupo}: {ejercicio} ({params['series']} x {params['reps']})"
+            )
 
     contenido = "\n".join(lineas)
 
     return Response(
         contenido,
         mimetype="text/plain",
-        headers={
-            "Content-Disposition": "attachment; filename=rutina_gymbot.txt"
-        }
+        headers={"Content-Disposition": "attachment; filename=rutina_gymbot.txt"},
     )
-
 
 
 if __name__ == "__main__":

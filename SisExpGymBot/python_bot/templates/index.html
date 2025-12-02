@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GymBot AI</title>
+    <title>GymBot AI - Sistema Experto</title>
     
     <!-- Bootstrap 5.3 & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -13,12 +13,14 @@
 
     <style>
         :root {
-            --primary-color: #4f46e5; /* Índigo moderno */
+            --primary-color: #4f46e5;
             --primary-hover: #4338ca;
             --accent-color: #818cf8;
             --bg-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
             --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
             --halo-color: rgba(79, 70, 229, 0.25);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
         }
 
         body {
@@ -30,7 +32,7 @@
         }
 
         .main-container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 40px auto;
         }
 
@@ -45,6 +47,7 @@
             font-weight: 700;
             color: #111827;
             letter-spacing: -0.5px;
+            font-size: 2.5rem;
         }
 
         .header .badge-ai {
@@ -59,6 +62,13 @@
             letter-spacing: 1px;
         }
 
+        .header-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
         /* Card Styles */
         .glass-card {
             background: rgba(255, 255, 255, 0.95);
@@ -68,6 +78,10 @@
             box-shadow: var(--card-shadow);
             padding: 30px;
             transition: transform 0.2s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
         }
 
         /* Form Controls & THE HALO EFFECT */
@@ -93,11 +107,10 @@
             background-color: #fff;
         }
 
-        /* El Halo Moderno */
         .form-select:focus, .form-control:focus {
             border-color: var(--primary-color);
             background-color: #fff;
-            box-shadow: 0 0 0 4px var(--halo-color); /* Anillo de luz */
+            box-shadow: 0 0 0 4px var(--halo-color);
             outline: none;
         }
 
@@ -111,12 +124,29 @@
             width: 100%;
             transition: all 0.3s ease;
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            color: white;
         }
 
         .btn-primary-custom:hover {
             background: var(--primary-hover);
             transform: translateY(-2px);
             box-shadow: 0 6px 15px rgba(79, 70, 229, 0.4);
+            color: white;
+        }
+
+        .btn-outline-custom {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            background: transparent;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline-custom:hover {
+            background: var(--primary-color);
+            color: white;
         }
 
         /* Results Section */
@@ -127,6 +157,33 @@
             padding: 20px;
             margin-bottom: 25px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-top: 5px;
         }
 
         .rutina-dia {
@@ -170,10 +227,17 @@
         .exercise-item {
             display: flex;
             align-items: flex-start;
-            padding: 8px 0;
+            padding: 10px 0;
             border-bottom: 1px dashed #e5e7eb;
+            transition: background 0.2s ease;
         }
         
+        .exercise-item:hover {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding-left: 10px;
+        }
+
         .exercise-item:last-child {
             border-bottom: none;
         }
@@ -183,7 +247,22 @@
             margin-right: 10px;
             margin-top: 3px;
         }
-        
+
+        .exercise-info-btn {
+            margin-left: auto;
+            background: transparent;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background 0.2s ease;
+        }
+
+        .exercise-info-btn:hover {
+            background: #e0e7ff;
+        }
+
         /* Animación de entrada */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -204,6 +283,195 @@
             margin-bottom: 5px;
             color: #4b5563;
         }
+
+        /* Recomendaciones */
+        .recommendation-item {
+            display: flex;
+            align-items: start;
+            padding: 10px;
+            background: #fffbeb;
+            border-left: 3px solid var(--warning-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .recommendation-item i {
+            color: var(--warning-color);
+            margin-right: 10px;
+            margin-top: 2px;
+        }
+
+        /* Timer de descanso */
+        .rest-timer {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .rest-timer.active {
+            display: block;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .timer-display {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Modal ejercicio */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+
+        .modal-header {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h2 {
+                font-size: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .rest-timer {
+                right: 15px;
+                bottom: 15px;
+                min-width: 150px;
+            }
+
+            .timer-display {
+                font-size: 2rem;
+            }
+        }
+        /* ===== MODO OSCURO ===== */
+        body.dark-mode {
+            --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: var(--bg-gradient);
+            color: #e4e4e7;
+        }
+
+        body.dark-mode .glass-card {
+            background: rgba(30, 30, 46, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .form-select,
+        body.dark-mode .form-control {
+            background-color: #2d2d44;
+            color: #e4e4e7;
+            border-color: #3d3d5c;
+        }
+
+        body.dark-mode .form-select:hover,
+        body.dark-mode .form-control:hover {
+            background-color: #363654;
+        }
+
+        body.dark-mode .header h2 {
+            color: #e4e4e7;
+        }
+
+        body.dark-mode .text-muted {
+            color: #a1a1aa !important;
+        }
+
+        body.dark-mode .rutina-dia {
+            background: #2d2d44;
+            border-color: #3d3d5c;
+        }
+
+        body.dark-mode .summary-card {
+            background: #2d2d44;
+            border-left-color: var(--primary-color);
+        }
+
+        body.dark-mode .stat-box {
+            background: #363654;
+            border-color: #3d3d5c;
+        }
+
+        body.dark-mode .recommendation-item {
+            background: #3d3d2e;
+            border-left-color: var(--warning-color);
+        }
+
+        body.dark-mode .modal-content {
+            background: #2d2d44;
+            color: #e4e4e7;
+        }
+
+        body.dark-mode .modal-body {
+            color: #e4e4e7;
+        }
+
+        body.dark-mode .btn-secondary {
+            background: #3d3d5c;
+            border-color: #3d3d5c;
+        }
+
+        /* Toggle Dark Mode Button */
+        .dark-mode-toggle {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            border: none;
+            color: white;
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dark-mode-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .dark-mode-toggle {
+                bottom: 80px;
+                left: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
+            }
+        }
     </style>
 </head>
 
@@ -213,12 +481,25 @@
 
     <!-- Header -->
     <div class="header">
-        <h2>GymBot <span class="badge-ai">AI BETA</span></h2>
-        <p class="text-muted">Sistema Experto de Entrenamiento Personalizado</p>
+        <h2>🏋️ GymBot <span class="badge-ai">AI EXPERT</span></h2>
+        <p class="text-muted">Sistema Experto de Entrenamiento Personalizado con IA</p>
+        <div class="header-actions">
+            <a href="/historial" class="btn btn-sm btn-outline-custom">
+                <i class="bi bi-clock-history me-1"></i> Historial
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-custom" onclick="abrirCalculadora1RM()">
+                <i class="bi bi-calculator me-1"></i> Calculadora 1RM
+            </button>
+            {% if session.get('historial') and session.get('historial')|length >= 2 %}
+            <button type="button" class="btn btn-sm btn-outline-custom" onclick="abrirComparador()">
+                <i class="bi bi-arrow-left-right me-1"></i> Comparar Rutinas
+            </button>
+            {% endif %}
+        </div>
     </div>
 
     <!-- Alertas -->
-    {% if error %}
+    {% if error and (objetivo or nivel or dias > 0) %}
         <div class="alert alert-danger d-flex align-items-center rounded-3 shadow-sm animate-up" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             <div>{{ error }}</div>
@@ -227,7 +508,7 @@
 
     <!-- Formulario Principal -->
     <form method="POST" class="glass-card mb-5 animate-up">
-        <h4 class="mb-4 fw-bold"><i class="bi bi-sliders me-2 text-primary"></i>Configuración</h4>
+        <h4 class="mb-4 fw-bold"><i class="bi bi-sliders me-2 text-primary"></i>Configuración de Entrenamiento</h4>
 
         <div class="row g-4">
             <!-- Objetivo -->
@@ -237,9 +518,9 @@
                     <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-bullseye text-primary"></i></span>
                     <select name="objetivo" class="form-select border-start-0 ps-0" required>
                         <option value="" selected disabled>Seleccionar...</option>
-                        <option value="ganar_masa">Ganar Masa Muscular</option>
-                        <option value="bajar_grasa">Bajar Grasa / Definir</option>
-                        <option value="fuerza">Ganar Fuerza</option>
+                        <option value="ganar_masa" {% if objetivo == 'ganar_masa' %}selected{% endif %}>Ganar Masa Muscular</option>
+                        <option value="bajar_grasa" {% if objetivo == 'bajar_grasa' %}selected{% endif %}>Bajar Grasa / Definir</option>
+                        <option value="fuerza" {% if objetivo == 'fuerza' %}selected{% endif %}>Ganar Fuerza</option>
                     </select>
                 </div>
             </div>
@@ -251,9 +532,9 @@
                     <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-bar-chart-line text-primary"></i></span>
                     <select name="nivel" class="form-select border-start-0 ps-0" required>
                         <option value="" selected disabled>Seleccionar...</option>
-                        <option value="principiante">Principiante (0-1 años)</option>
-                        <option value="intermedio">Intermedio (1-3 años)</option>
-                        <option value="avanzado">Avanzado (+3 años)</option>
+                        <option value="principiante" {% if nivel == 'principiante' %}selected{% endif %}>Principiante (0-1 años)</option>
+                        <option value="intermedio" {% if nivel == 'intermedio' %}selected{% endif %}>Intermedio (1-3 años)</option>
+                        <option value="avanzado" {% if nivel == 'avanzado' %}selected{% endif %}>Avanzado (+3 años)</option>
                     </select>
                 </div>
             </div>
@@ -263,7 +544,7 @@
                 <label class="form-label">Frecuencia Semanal</label>
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-calendar-check text-primary"></i></span>
-                    <input type="number" name="dias" class="form-control border-start-0 ps-0" min="1" max="6" placeholder="1-6 días" required>
+                    <input type="number" name="dias" class="form-control border-start-0 ps-0" min="1" max="6" value="{{ dias if dias else '' }}" placeholder="1-6 días" required>
                 </div>
             </div>
 
@@ -273,10 +554,12 @@
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-bandaid text-danger"></i></span>
                     <select name="lesion" class="form-select border-start-0 ps-0" required>
-                        <option value="ninguna">Ninguna</option>
-                        <option value="espalda">Dolor de Espalda</option>
-                        <option value="rodilla">Dolor de Rodilla</option>
-                        <option value="hombro">Dolor de Hombro</option>
+                        <option value="ninguna" {% if not lesion or lesion == 'ninguna' %}selected{% endif %}>Ninguna</option>
+                        <option value="extremidad_superior" {% if lesion == 'extremidad_superior' %}selected{% endif %}>Extremidad Superior (Brazos/Hombros)</option>
+                        <option value="extremidad_inferior" {% if lesion == 'extremidad_inferior' %}selected{% endif %}>Extremidad Inferior (Piernas/Rodillas)</option>
+                        <option value="espalda_lumbar" {% if lesion == 'espalda_lumbar' %}selected{% endif %}>Espalda Baja / Lumbar</option>
+                        <option value="espalda_cervical" {% if lesion == 'espalda_cervical' %}selected{% endif %}>Espalda Alta / Cervical</option>
+                        <option value="core" {% if lesion == 'core' %}selected{% endif %}>Zona Abdominal / Core</option>
                     </select>
                 </div>
             </div>
@@ -288,16 +571,16 @@
                     <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-box-seam text-primary"></i></span>
                     <select name="equipamiento" class="form-select border-start-0 ps-0" required>
                         <option value="" selected disabled>Seleccionar...</option>
-                        <option value="peso_corporal">Solo Peso Corporal</option>
-                        <option value="mancuernas">Mancuernas en Casa</option>
-                        <option value="gym_completo">Gimnasio Completo</option>
+                        <option value="peso_corporal" {% if equip == 'peso_corporal' %}selected{% endif %}>Solo Peso Corporal</option>
+                        <option value="mancuernas" {% if equip == 'mancuernas' %}selected{% endif %}>Mancuernas en Casa</option>
+                        <option value="gym_completo" {% if equip == 'gym_completo' %}selected{% endif %}>Gimnasio Completo</option>
                     </select>
                 </div>
             </div>
         </div>
 
         <div class="mt-4">
-            <button class="btn btn-primary btn-primary-custom text-white">
+            <button type="submit" class="btn btn-primary-custom">
                 <i class="bi bi-cpu-fill me-2"></i> Generar Rutina Inteligente
             </button>
         </div>
@@ -308,37 +591,88 @@
     
     <!-- Sección de Resultados -->
     <div class="animate-up" style="animation-delay: 0.2s;">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3 class="fw-bold mb-0">Tu Plan Semanal</h3>
-            <!-- Botón de descarga -->
-            <form method="POST" action="/download">
-                <input type="hidden" name="objetivo" value="{{ objetivo }}">
-                <input type="hidden" name="nivel" value="{{ nivel }}">
-                <input type="hidden" name="dias" value="{{ dias }}">
-                <input type="hidden" name="lesion" value="{{ lesion }}">
-                <input type="hidden" name="equipamiento" value="{{ equip }}">
-                <input type="hidden" name="rutina_texto" value="{{ rutina }}"> <!-- Necesario para el backend actual -->
-                <button type="submit" class="btn btn-outline-dark btn-sm rounded-pill px-3">
-                    <i class="bi bi-download me-1"></i> Descargar .txt
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h3 class="fw-bold mb-0">Tu Plan Semanal Personalizado</h3>
+            <div class="d-flex gap-2 flex-wrap">
+                <!-- Botón timer de descanso -->
+                <button type="button" class="btn btn-sm btn-outline-custom" onclick="iniciarTimer()">
+                    <i class="bi bi-stopwatch me-1"></i> Timer
                 </button>
-            </form>
+                
+                <!-- Botón de descarga TXT -->
+                <form method="POST" action="/download" style="display: inline;">
+                    <input type="hidden" name="objetivo" value="{{ objetivo }}">
+                    <input type="hidden" name="nivel" value="{{ nivel }}">
+                    <input type="hidden" name="dias" value="{{ dias }}">
+                    <input type="hidden" name="lesion" value="{{ lesion }}">
+                    <input type="hidden" name="equipamiento" value="{{ equip }}">
+                    <button type="submit" class="btn btn-outline-custom btn-sm">
+                        <i class="bi bi-download me-1"></i> TXT
+                    </button>
+                </form>
+
+                <!-- Botón de descarga JSON -->
+                <form method="POST" action="/download_json" style="display: inline;">
+                    <input type="hidden" name="objetivo" value="{{ objetivo }}">
+                    <input type="hidden" name="nivel" value="{{ nivel }}">
+                    <input type="hidden" name="dias" value="{{ dias }}">
+                    <input type="hidden" name="lesion" value="{{ lesion }}">
+                    <input type="hidden" name="equipamiento" value="{{ equip }}">
+                    <button type="submit" class="btn btn-outline-custom btn-sm">
+                        <i class="bi bi-filetype-json me-1"></i> JSON
+                    </button>
+                </form>
+
+                <!-- Botón de descarga CALENDARIO -->
+                <form method="POST" action="/download_calendar" style="display: inline;">
+                    <input type="hidden" name="objetivo" value="{{ objetivo }}">
+                    <input type="hidden" name="nivel" value="{{ nivel }}">
+                    <input type="hidden" name="dias" value="{{ dias }}">
+                    <input type="hidden" name="lesion" value="{{ lesion }}">
+                    <input type="hidden" name="equipamiento" value="{{ equip }}">
+                    <button type="submit" class="btn btn-outline-custom btn-sm">
+                        <i class="bi bi-calendar-plus me-1"></i> Calendario
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <!-- Resumen de parámetros -->
+        <!-- Resumen de parámetros y estadísticas -->
         {% if objetivo and nivel and dias %}
             <div class="summary-card">
                 <div class="d-flex align-items-center mb-2">
                     <i class="bi bi-info-circle-fill text-primary me-2"></i>
-                    <h5 class="mb-0 fw-bold">Parámetros del modelo</h5>
+                    <h5 class="mb-0 fw-bold">Configuración y Estadísticas</h5>
                 </div>
                 <div class="mb-3">
                     <span class="param-tag"><i class="bi bi-crosshair me-1"></i>{{ objetivo|replace('_', ' ')|capitalize }}</span>
                     <span class="param-tag"><i class="bi bi-ladder me-1"></i>{{ nivel|capitalize }}</span>
                     <span class="param-tag"><i class="bi bi-calendar3 me-1"></i>{{ dias }} días/sem</span>
                     <span class="param-tag"><i class="bi bi-tools me-1"></i>{{ equip|replace('_', ' ')|capitalize }}</span>
+                    {% if lesion != 'ninguna' %}
+                    <span class="param-tag"><i class="bi bi-bandaid me-1"></i>Lesión: {{ lesion|capitalize }}</span>
+                    {% endif %}
                 </div>
+
+                {% if stats %}
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value">{{ stats.total_ejercicios }}</div>
+                        <div class="stat-label">Ejercicios Totales</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">{{ stats.promedio_ejercicios_por_dia }}</div>
+                        <div class="stat-label">Promedio por Día</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">{{ stats.grupo_mas_trabajado|capitalize }}</div>
+                        <div class="stat-label">Grupo Principal</div>
+                    </div>
+                </div>
+                {% endif %}
+
                 {% if training_params %}
-                    <p class="mb-0 text-muted small border-top pt-2 mt-2">
+                    <p class="mb-0 text-muted small border-top pt-2 mt-3">
                         <i class="bi bi-lightbulb-fill text-warning me-1"></i>
                         <strong>Recomendación técnica:</strong> Realizar 
                         <span class="text-dark fw-bold">{{ training_params.series }} series</span> de 
@@ -348,6 +682,19 @@
             </div>
         {% endif %}
 
+        <!-- Recomendaciones de Progresión -->
+        {% if recomendaciones %}
+        <div class="glass-card mb-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow text-success me-2"></i>Recomendaciones de Progresión</h5>
+            {% for rec in recomendaciones %}
+            <div class="recommendation-item">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>{{ rec }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- Tarjetas de Rutina -->
         <div class="row">
         {% for dia in rutina %}
@@ -355,16 +702,25 @@
                 <div class="rutina-dia">
                     <div class="dia-header">
                         <span class="dia-badge">DÍA {{ dia[0] }}</span>
-                        <span class="text-muted small ms-auto">Sesión completa</span>
+                        <span class="text-muted small ms-auto">
+                            {% if dia|length > 2 %}
+                            {{ dia[2] }} series × {{ dia[3] }} reps
+                            {% else %}
+                            Sesión completa
+                            {% endif %}
+                        </span>
                     </div>
                     <ul class="exercise-list">
                         {% for grupo, ejercicio in dia[1] %}
                             <li class="exercise-item">
                                 <i class="bi bi-check-circle-fill exercise-icon"></i>
-                                <div>
+                                <div class="flex-grow-1">
                                     <strong class="text-uppercase text-secondary" style="font-size: 0.75rem; letter-spacing: 0.5px;">{{ grupo }}</strong>
                                     <div class="fw-bold text-dark">{{ ejercicio|replace('_', ' ')|capitalize }}</div>
                                 </div>
+                                <button class="exercise-info-btn" onclick="mostrarInfoEjercicio('{{ ejercicio }}')">
+                                    <i class="bi bi-info-circle"></i>
+                                </button>
                             </li>
                         {% endfor %}
                     </ul>
@@ -377,7 +733,416 @@
 
 </div>
 
-<!-- Scripts de Bootstrap -->
+<!-- Timer de Descanso -->
+<div class="rest-timer" id="restTimer">
+    <h6 class="text-center mb-0">Descanso</h6>
+    <div class="timer-display" id="timerDisplay">01:30</div>
+    <div class="timer-controls">
+        <button class="btn btn-sm btn-success flex-grow-1" onclick="pausarTimer()">
+            <i class="bi bi-pause-fill"></i>
+        </button>
+        <button class="btn btn-sm btn-danger flex-grow-1" onclick="cerrarTimer()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Modal Info Ejercicio -->
+<div class="modal fade" id="exerciseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exerciseModalTitle">Información del Ejercicio</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="exerciseNotes" class="mb-0"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Calculadora 1RM -->
+<div class="modal fade" id="calculadora1RMModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-calculator me-2"></i>Calculadora de 1RM</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Calcula tu máximo de una repetición (1RM) basado en el peso y repeticiones realizadas.</p>
+                
+                <div class="mb-3">
+                    <label class="form-label">Peso levantado (kg)</label>
+                    <input type="number" id="peso1rm" class="form-control" placeholder="Ej: 100" step="0.5" min="1">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Repeticiones realizadas</label>
+                    <input type="number" id="reps1rm" class="form-control" placeholder="Ej: 8" min="1" max="20">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Fórmula</label>
+                    <select id="formula1rm" class="form-select">
+                        <option value="epley">Epley (Recomendada)</option>
+                        <option value="brzycki">Brzycki</option>
+                        <option value="lander">Lander</option>
+                        <option value="lombardi">Lombardi</option>
+                        <option value="mayhew">Mayhew</option>
+                        <option value="oconner">O'Conner</option>
+                        <option value="wathan">Wathan</option>
+                    </select>
+                </div>
+                
+                <button onclick="calcular1RM()" class="btn btn-primary-custom mb-3">
+                    <i class="bi bi-calculator me-2"></i>Calcular
+                </button>
+                
+                <div id="resultado1rm" style="display: none;">
+                    <div class="alert alert-success">
+                        <h6 class="mb-2">Tu 1RM estimado: <strong id="valor1rm"></strong> kg</h6>
+                    </div>
+                    
+                    <h6 class="mb-2">Porcentajes de entrenamiento:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>%</th>
+                                    <th>Peso</th>
+                                    <th>Uso recomendado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla1rm">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Comparador de Rutinas -->
+<div class="modal fade" id="comparadorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-arrow-left-right me-2"></i>Comparar Rutinas</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Compara dos rutinas de tu historial para ver las diferencias.</p>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Rutina 1</label>
+                        <select id="rutina1Compare" class="form-select">
+                            {% if session.get('historial') %}
+                                {% for i in range(session.get('historial')|length) %}
+                                <option value="{{ i }}">
+                                    {{ session.get('historial')[i].fecha[:10] }} - {{ session.get('historial')[i].objetivo|replace('_',' ')|title }}
+                                </option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Rutina 2</label>
+                        <select id="rutina2Compare" class="form-select">
+                            {% if session.get('historial') %}
+                                {% for i in range(session.get('historial')|length) %}
+                                <option value="{{ i }}" {% if i == 1 %}selected{% endif %}>
+                                    {{ session.get('historial')[i].fecha[:10] }} - {{ session.get('historial')[i].objetivo|replace('_',' ')|title }}
+                                </option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+                
+                <button onclick="compararRutinas()" class="btn btn-primary-custom mb-3">
+                    <i class="bi bi-arrow-left-right me-2"></i>Comparar
+                </button>
+                
+                <div id="resultadoComparacion" style="display: none;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botón Toggle Modo Oscuro -->
+<button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Cambiar tema">
+    <i class="bi bi-moon-fill" id="darkModeIcon"></i>
+</button>
+
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Timer de descanso
+    let timerInterval;
+    let timerSeconds = 90;
+    let timerPaused = false;
+
+    function iniciarTimer() {
+        const timer = document.getElementById('restTimer');
+        timer.classList.add('active');
+        timerSeconds = 90;
+        timerPaused = false;
+        actualizarDisplay();
+        
+        if (timerInterval) clearInterval(timerInterval);
+        
+        timerInterval = setInterval(() => {
+            if (!timerPaused && timerSeconds > 0) {
+                timerSeconds--;
+                actualizarDisplay();
+                
+                if (timerSeconds === 0) {
+                    // Notificación de fin
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('GymBot', { body: '¡Descanso terminado!' });
+                    }
+                    clearInterval(timerInterval);
+                }
+            }
+        }, 1000);
+    }
+
+    function actualizarDisplay() {
+        const mins = Math.floor(timerSeconds / 60);
+        const secs = timerSeconds % 60;
+        document.getElementById('timerDisplay').textContent = 
+            `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function pausarTimer() {
+        timerPaused = !timerPaused;
+    }
+
+    function cerrarTimer() {
+        const timer = document.getElementById('restTimer');
+        timer.classList.remove('active');
+        if (timerInterval) clearInterval(timerInterval);
+    }
+
+    // Info de ejercicio
+    async function mostrarInfoEjercicio(nombre) {
+        try {
+            const response = await fetch(`/api/ejercicio/${nombre}`);
+            const data = await response.json();
+            
+            document.getElementById('exerciseModalTitle').textContent = data.nombre;
+            document.getElementById('exerciseNotes').textContent = data.notas_tecnica;
+            
+            const modal = new bootstrap.Modal(document.getElementById('exerciseModal'));
+            modal.show();
+        } catch (error) {
+            console.error('Error cargando info del ejercicio:', error);
+        }
+    }
+
+    // Pedir permiso para notificaciones
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+</script>
+
+<script>
+// ===== MODO OSCURO =====
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    
+    // Cambiar icono
+    const icon = document.getElementById('darkModeIcon');
+    icon.className = isDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+    
+    // Guardar preferencia
+    localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+}
+
+// Cargar preferencia al inicio
+document.addEventListener('DOMContentLoaded', function() {
+    const darkMode = localStorage.getItem('darkMode');
+    if (darkMode === 'enabled') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('darkModeIcon').className = 'bi bi-sun-fill';
+    }
+});
+
+// ===== CALCULADORA 1RM =====
+function abrirCalculadora1RM() {
+    const modal = new bootstrap.Modal(document.getElementById('calculadora1RMModal'));
+    modal.show();
+}
+
+async function calcular1RM() {
+    const peso = parseFloat(document.getElementById('peso1rm').value);
+    const reps = parseInt(document.getElementById('reps1rm').value);
+    const formula = document.getElementById('formula1rm').value;
+    
+    if (!peso || !reps || peso <= 0 || reps <= 0 || reps > 20) {
+        alert('Por favor ingresa valores válidos (peso > 0, repeticiones entre 1-20)');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/calcular_1rm', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ peso, reps, formula })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        // Mostrar resultado
+        document.getElementById('valor1rm').textContent = data['1rm'];
+        
+        // Tabla de porcentajes
+        const usos = {
+            '95': 'Máxima fuerza (1-3 reps)',
+            '90': 'Fuerza pura (2-4 reps)',
+            '85': 'Fuerza-Hipertrofia (4-6 reps)',
+            '80': 'Hipertrofia (6-8 reps)',
+            '75': 'Hipertrofia (8-10 reps)',
+            '70': 'Hipertrofia-Resistencia (10-12 reps)',
+            '65': 'Resistencia (12-15 reps)',
+            '60': 'Resistencia muscular (15+ reps)'
+        };
+        
+        let tablaHTML = '';
+        for (const [porcentaje, peso_calc] of Object.entries(data)) {
+            if (porcentaje !== '1rm') {
+                tablaHTML += `
+                    <tr>
+                        <td><strong>${porcentaje}%</strong></td>
+                        <td>${peso_calc} kg</td>
+                        <td class="text-muted small">${usos[porcentaje]}</td>
+                    </tr>
+                `;
+            }
+        }
+        
+        document.getElementById('tabla1rm').innerHTML = tablaHTML;
+        document.getElementById('resultado1rm').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al calcular 1RM');
+    }
+}
+
+// ===== COMPARADOR DE RUTINAS =====
+function abrirComparador() {
+    const modal = new bootstrap.Modal(document.getElementById('comparadorModal'));
+    modal.show();
+}
+
+async function compararRutinas() {
+    const index1 = parseInt(document.getElementById('rutina1Compare').value);
+    const index2 = parseInt(document.getElementById('rutina2Compare').value);
+    
+    if (index1 === index2) {
+        alert('Por favor selecciona dos rutinas diferentes');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/comparar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ index1, index2 })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        // Mostrar resultados
+        let html = '<h6 class="mb-3">Comparación de Volumen por Grupo Muscular:</h6>';
+        html += '<div class="table-responsive"><table class="table table-sm">';
+        html += '<thead><tr><th>Grupo</th><th>Rutina 1</th><th>Rutina 2</th><th>Diferencia</th></tr></thead>';
+        html += '<tbody>';
+        
+        for (const [grupo, vol1] of Object.entries(data.volumen_rutina1)) {
+            const vol2 = data.volumen_rutina2[grupo];
+            const diff = data.diferencias_volumen[grupo];
+            const diffClass = diff > 0 ? 'text-success' : (diff < 0 ? 'text-danger' : 'text-muted');
+            const diffIcon = diff > 0 ? '↑' : (diff < 0 ? '↓' : '=');
+            
+            html += `
+                <tr>
+                    <td><strong>${grupo.charAt(0).toUpperCase() + grupo.slice(1)}</strong></td>
+                    <td>${vol1} ejercicios</td>
+                    <td>${vol2} ejercicios</td>
+                    <td class="${diffClass}">${diffIcon} ${Math.abs(diff)}</td>
+                </tr>
+            `;
+        }
+        
+        html += '</tbody></table></div>';
+        
+        // Ejercicios únicos
+        html += '<div class="row mt-3">';
+        html += '<div class="col-md-6">';
+        html += '<h6>Solo en Rutina 1:</h6>';
+        if (data.ejercicios_solo_rutina1.length > 0) {
+            html += '<ul class="small">';
+            data.ejercicios_solo_rutina1.forEach(ej => {
+                html += `<li>${ej.replace(/_/g, ' ')}</li>`;
+            });
+            html += '</ul>';
+        } else {
+            html += '<p class="text-muted small">Ninguno</p>';
+        }
+        html += '</div>';
+        
+        html += '<div class="col-md-6">';
+        html += '<h6>Solo en Rutina 2:</h6>';
+        if (data.ejercicios_solo_rutina2.length > 0) {
+            html += '<ul class="small">';
+            data.ejercicios_solo_rutina2.forEach(ej => {
+                html += `<li>${ej.replace(/_/g, ' ')}</li>`;
+            });
+            html += '</ul>';
+        } else {
+            html += '<p class="text-muted small">Ninguno</p>';
+        }
+        html += '</div>';
+        html += '</div>';
+        
+        html += `<div class="alert alert-info mt-3">
+            <strong>Ejercicios comunes:</strong> ${data.ejercicios_comunes.length} de ${data.total_ejercicios_r1} y ${data.total_ejercicios_r2}
+        </div>`;
+        
+        document.getElementById('resultadoComparacion').innerHTML = html;
+        document.getElementById('resultadoComparacion').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al comparar rutinas');
+    }
+}
+</script>
+
 </body>
 </html>

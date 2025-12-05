@@ -440,3 +440,110 @@ def comparar_rutinas(rutina1: List, rutina2: List) -> Dict[str, Any]:
         "total_ejercicios_r1": len(ejercicios1),
         "total_ejercicios_r2": len(ejercicios2),
     }
+
+
+def optimizar_secuencia_np(
+    ejercicios: List[Tuple[str, str]], metodo: str = "greedy"
+) -> Dict:
+    """
+    Llama al optimizador NP de Prolog para encontrar la secuencia óptima.
+
+    Args:
+        ejercicios: Lista de tuplas (grupo_muscular, nombre_ejercicio)
+        metodo: 'greedy', 'branch_and_bound', o 'exacto'
+
+    Returns:
+        Dict con secuencia optimizada, costo, y estadísticas
+    """
+    from pyswip import Prolog
+
+    # Extraer solo los nombres de ejercicios
+    nombres_ejercicios = [ej[1] for ej in ejercicios]
+
+    # Convertir a formato Prolog
+    lista_prolog = "[" + ", ".join(nombres_ejercicios) + "]"
+
+    try:
+        prolog = Prolog()
+
+        # Cargar la base de conocimiento
+        import os
+
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        kb_dir = os.path.join(base_dir, "..", "prolog_kb")
+        kb_dir = os.path.normpath(kb_dir).replace("\\", "/")
+
+        list(prolog.query(f"working_directory(_, '{kb_dir}')"))
+        prolog.consult("np_optimizer.pl")
+
+        # Ejecutar consulta según el método
+        if metodo == "greedy":
+            query = f"resolver_greedy({lista_prolog}, Secuencia, Costo)"
+        elif metodo == "branch_and_bound":
+            query = f"resolver_branch_and_bound({lista_prolog}, Secuencia, Costo)"
+        elif metodo == "exacto":
+            query = f"resolver_exacto({lista_prolog}, Secuencia, Costo)"
+        else:
+            return {"error": f"Método inválido: {metodo}"}
+
+        result = list(prolog.query(query))
+
+        if result:
+            secuencia_optimizada = result[0]["Secuencia"]
+            costo_optimizado = result[0]["Costo"]
+
+            # Calcular costo de la secuencia original para mostrar el ahorro real
+            try:
+                query_original = f"costo_secuencia({lista_prolog}, CostoOriginal)"
+                print(f"🔍 Query costo original: {query_original}")
+                result_original = list(prolog.query(query_original))
+                print(f"🔍 Resultado query: {result_original}")
+                costo_original = (
+                    result_original[0]["CostoOriginal"]
+                    if result_original
+                    else costo_optimizado
+                )
+                print(f"✅ Costo original calculado: {costo_original}")
+            except Exception as e:
+                print(f"⚠️ No se pudo calcular costo original: {e}")
+                import traceback
+
+                traceback.print_exc()
+                costo_original = costo_optimizado  # Fallback: asumir que no hay mejora
+
+            # Calcular ahorro real
+            ahorro = costo_original - costo_optimizado
+
+            return {
+                "success": True,
+                "metodo": metodo,
+                "secuencia_original": nombres_ejercicios,
+                "secuencia_optimizada": secuencia_optimizada,
+                "costo_original": costo_original,
+                "costo_optimizado": costo_optimizado,
+                "ahorro": ahorro,
+                "costo": costo_optimizado,  # Mantener por compatibilidad
+                "mejora": calcular_mejora_secuencia(
+                    nombres_ejercicios, secuencia_optimizada
+                ),
+            }
+        else:
+            return {"error": "No se pudo optimizar la secuencia"}
+
+    except Exception as e:
+        return {"error": f"Error ejecutando optimizador: {str(e)}"}
+
+
+def calcular_mejora_secuencia(original: List[str], optimizada: List[str]) -> str:
+    """
+    Calcula cuántos cambios se hicieron en la secuencia.
+    """
+    cambios = sum(
+        1
+        for i, ej in enumerate(original)
+        if i < len(optimizada) and ej != optimizada[i]
+    )
+    total = len(original)
+    porcentaje = (cambios / total) * 100 if total > 0 else 0
+
+    return f"{cambios} ejercicios reordenados ({porcentaje:.1f}% de cambios)"

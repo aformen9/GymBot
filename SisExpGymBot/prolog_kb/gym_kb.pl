@@ -4,3 +4,4 @@
 
 :- [exercises].   % carga exercises.pl
 :- [rules].       % carga rules.pl
+:- [np_optimizer]. % carga np_optimizer.pl

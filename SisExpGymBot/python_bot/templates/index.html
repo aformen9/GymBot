@@ -472,6 +472,28 @@
                 font-size: 1.1rem;
             }
         }
+
+        .btn-outline-primary {
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        body.dark-mode .btn-outline-primary {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        body.dark-mode .btn-outline-primary:hover {
+            background: var(--accent-color);
+            color: #1f2937;
+        }
     </style>
 </head>
 
@@ -699,7 +721,7 @@
         <div class="row">
         {% for dia in rutina %}
             <div class="col-md-6 col-lg-12">
-                <div class="rutina-dia">
+                <div class="rutina-dia" id="dia-{{ dia[0] }}" data-dia="{{ dia[0] }}">
                     <div class="dia-header">
                         <span class="dia-badge">DÍA {{ dia[0] }}</span>
                         <span class="text-muted small ms-auto">
@@ -709,10 +731,15 @@
                             Sesión completa
                             {% endif %}
                         </span>
+                        <button class="btn btn-sm btn-outline-primary ms-2" 
+                            onclick="optimizarDia({{ dia[0] }})"
+                            title="Optimizar secuencia de ejercicios">
+                            <i class="bi bi-lightning-charge"></i> Optimizar
+                        </button>
                     </div>
                     <ul class="exercise-list">
                         {% for grupo, ejercicio in dia[1] %}
-                            <li class="exercise-item">
+                            <li class="exercise-item" data-grupo="{{ grupo }}" data-ejercicio="{{ ejercicio }}">
                                 <i class="bi bi-check-circle-fill exercise-icon"></i>
                                 <div class="flex-grow-1">
                                     <strong class="text-uppercase text-secondary" style="font-size: 0.75rem; letter-spacing: 0.5px;">{{ grupo }}</strong>
@@ -871,6 +898,59 @@
                 </button>
                 
                 <div id="resultadoComparacion" style="display: none;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Optimizador NP -->
+<div class="modal fade" id="optimizadorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-lightning-charge me-2"></i>Optimización de Secuencia (Algoritmo NP)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <h6 class="mb-2"><i class="bi bi-info-circle me-2"></i>¿Qué hace este optimizador?</h6>
+                    <p class="mb-2 small">
+                        Encuentra el <strong>mejor orden</strong> para realizar tus ejercicios, minimizando:
+                    </p>
+                    <ul class="small mb-2">
+                        <li>⏱️ Tiempo perdido cambiando de equipamiento</li>
+                        <li>💪 Fatiga acumulada por trabajar el mismo músculo seguido</li>
+                        <li>🔧 Ajustes innecesarios de pesos y máquinas</li>
+                    </ul>
+                    <p class="mb-0 small">
+                        <strong>Problema NP-Completo:</strong> Similar a optimizar rutas de entrega, requiere algoritmos especializados para encontrar la mejor solución.
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="metodoOptimizacion" class="form-label">Algoritmo:</label>
+                    <select class="form-select" id="metodoOptimizacion">
+                        <option value="greedy">Greedy Heurística (O(N²) - Rápido)</option>
+                        <option value="exacto">Fuerza Bruta (O(N!) - Lento, N≤10)</option>
+                    </select>
+                    <p class="small text-muted mt-2">Para N ≤ 10 ejercicios puedes usar el algoritmo exacto.</p>
+                </div>
+                
+                <button onclick="ejecutarOptimizacion()" class="btn btn-primary-custom mb-3">
+                    <i class="bi bi-lightning-charge me-2"></i>Ejecutar Optimización
+                </button>
+                
+                <div id="loadingOptimizacion" style="display: none;" class="text-center my-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Optimizando...</span>
+                    </div>
+                    <p class="mt-2">Calculando secuencia óptima...</p>
+                </div>
+                
+                <div id="resultadoOptimizacion" style="display: none;">
                 </div>
             </div>
         </div>
@@ -1142,7 +1222,137 @@ async function compararRutinas() {
         alert('Error al comparar rutinas');
     }
 }
+
+// ===== OPTIMIZADOR NP =====
+let diaActualOptimizar = 1;
+let paramsActualesOptimizar = {};
+
+function optimizarDia(dia) {
+    diaActualOptimizar = dia;
+    
+    // Extraer ejercicios del día desde el DOM
+    const diaElement = document.getElementById(`dia-${dia}`);
+    const ejerciciosElements = diaElement.querySelectorAll('.exercise-item');
+    const ejercicios = [];
+    
+    ejerciciosElements.forEach(item => {
+        const grupo = item.getAttribute('data-grupo');
+        const ejercicio = item.getAttribute('data-ejercicio');
+        ejercicios.push([grupo, ejercicio]);
+    });
+    
+    paramsActualesOptimizar = { ejercicios };
+    
+    const modal = new bootstrap.Modal(document.getElementById('optimizadorModal'));
+    modal.show();
+    
+    // Reset
+    document.getElementById('resultadoOptimizacion').style.display = 'none';
+    document.getElementById('loadingOptimizacion').style.display = 'none';
+}
+
+async function ejecutarOptimizacion() {
+    const metodo = document.getElementById('metodoOptimizacion').value;
+    const loadingDiv = document.getElementById('loadingOptimizacion');
+    const resultadoDiv = document.getElementById('resultadoOptimizacion');
+    
+    // Mostrar loading
+    loadingDiv.style.display = 'block';
+    resultadoDiv.style.display = 'none';
+    
+    try {
+        const response = await fetch('/api/optimizar_secuencia', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                dia: diaActualOptimizar,
+                metodo: metodo,
+                ...paramsActualesOptimizar
+            })
+        });
+        
+        const data = await response.json();
+        
+        console.log('🔍 Datos recibidos del backend:', data);
+        console.log('🔍 costo_original:', data.costo_original);
+        console.log('🔍 ahorro:', data.ahorro);
+        
+        loadingDiv.style.display = 'none';
+        
+        if (data.error || !data.success) {
+            alert('Error: ' + (data.error || 'No se pudo optimizar la secuencia'));
+            return;
+        }
+        
+        // Mostrar resultados
+        let html = '<div class="alert alert-success">';
+        html += '<h6 class="mb-2"><i class="bi bi-check-circle me-2"></i>Optimización Completada</h6>';
+        html += `<p class="mb-1"><strong>Método:</strong> ${data.metodo}</p>`;
+        html += `<p class="mb-1"><strong>Costo original:</strong> ${data.costo_original} segundos</p>`;
+        html += `<p class="mb-1"><strong>Costo optimizado:</strong> ${data.costo} segundos</p>`;
+        
+        // Mostrar ahorro o mensaje si no hay mejora
+        if (data.ahorro > 0) {
+            html += `<p class="mb-0"><strong>Ahorro:</strong> ${data.ahorro.toFixed(1)} segundos (${((data.ahorro / data.costo_original) * 100).toFixed(1)}% mejor)</p>`;
+        } else {
+            html += `<p class="mb-0"><strong>Resultado:</strong> La secuencia original ya era óptima (no se encontró mejora)</p>`;
+        }
+        html += '</div>';
+        
+        html += '<h6 class="mt-3 mb-2">Secuencia Optimizada:</h6>';
+        html += '<ol class="list-group list-group-numbered">';
+        
+        data.secuencia_optimizada.forEach((ej, idx) => {
+            html += `
+                <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div class="ms-2 me-auto">
+                        <div class="fw-bold">${ej.nombre_formateado}</div>
+                        <small class="text-muted">${ej.grupo.toUpperCase()}</small>
+                    </div>
+                    <span class="badge bg-primary rounded-pill">${idx + 1}</span>
+                </li>
+            `;
+        });
+        
+        html += '</ol>';
+        
+        // Explicación educativa detallada
+        html += '<div class="alert alert-info mt-3">';
+        html += '<h6 class="mb-2"><i class="bi bi-lightbulb-fill me-2"></i>¿Por qué es mejor esta secuencia?</h6>';
+        html += '<p class="mb-2 small">El algoritmo optimizó <strong>3 factores clave</strong>:</p>';
+        html += '<ul class="small mb-2">';
+        html += '<li><strong>⏱️ Tiempo de transición:</strong> Minimiza el tiempo perdido cambiando de equipamiento (barras → mancuernas → máquinas)</li>';
+        html += '<li><strong>💪 Fatiga muscular:</strong> Evita trabajar el mismo grupo muscular consecutivamente, permitiendo mejor recuperación</li>';
+        html += '<li><strong>🔧 Setup de equipamiento:</strong> Reduce ajustes innecesarios entre ejercicios</li>';
+        html += '</ul>';
+        
+        if (data.ahorro > 0) {
+            html += `<p class="mb-0 small"><strong>Resultado:</strong> Ahorras <strong>${data.ahorro.toFixed(1)} segundos</strong> de tiempo muerto (${((data.ahorro / data.costo_original) * 100).toFixed(1)}% más eficiente), permitiéndote entrenar mejor o agregar más volumen.</p>`;
+        } else {
+            html += `<p class="mb-0 small"><strong>Resultado:</strong> Tu secuencia original ya estaba bien optimizada. El algoritmo confirmó que es una de las mejores opciones posibles.</p>`;
+        }
+        html += '</div>';
+        
+        html += '<div class="alert alert-secondary mt-2">';
+        html += '<small><i class="bi bi-cpu me-1"></i>';
+        html += '<strong>Dato técnico:</strong> Este es un problema NP-Completo (Optimal Exercise Sequencing), similar a optimizar rutas de entrega. ';
+        html += `El algoritmo <em>${data.metodo}</em> encuentra una solución ${data.metodo === 'exacto' ? 'óptima garantizada' : 'muy buena en tiempo razonable'}.`;
+        html += '</small></div>';
+        
+        resultadoDiv.innerHTML = html;
+        resultadoDiv.style.display = 'block';
+        
+    } catch (error) {
+        loadingDiv.style.display = 'none';
+        console.error('Error:', error);
+        alert('Error al optimizar secuencia');
+    }
+}
+
 </script>
 
 </body>
 </html>
+

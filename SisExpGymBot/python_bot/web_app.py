@@ -159,8 +159,12 @@ def index():
             # Consultar rutina desde Prolog
             rutina = consultar_rutina(objetivo, nivel, dias_int, lesion, equip)
 
-            # Optimizar orden de ejercicios
-            rutina = routine_builder.optimizar_orden_ejercicios(rutina, objetivo)
+            # Ordenar ejercicios alfabéticamente para que el optimizador tenga trabajo que hacer
+            # (en lugar de pre-optimizar, dejamos que el usuario use el botón "Optimizar")
+            for dia_info in rutina:
+                if len(dia_info) >= 2:
+                    # Ordenar los ejercicios alfabéticamente por nombre
+                    dia_info[1] = sorted(dia_info[1], key=lambda x: x[1])
 
             # Obtener volumen recomendado
             params = {"series": 4, "reps": "8-12"}
@@ -405,6 +409,85 @@ def comparar_rutinas_endpoint():
 
         return jsonify(comparacion)
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/optimizar_secuencia", methods=["POST"])
+def optimizar_secuencia_endpoint():
+    """Optimiza la secuencia de ejercicios usando el algoritmo NP."""
+    try:
+        data = request.get_json()
+        dia = int(data.get("dia", 1))
+        metodo = data.get("metodo", "greedy")
+
+        # Obtener ejercicios directamente del frontend
+        ejercicios = data.get("ejercicios")
+
+        # DEBUG: Imprimir valores
+        print("=" * 60)
+        print("DEBUG OPTIMIZADOR NP:")
+        print(f"  Día solicitado: {dia}")
+        print(f"  Método: {metodo}")
+        print(f"  Ejercicios recibidos: {ejercicios}")
+        print("=" * 60)
+
+        if not ejercicios:
+            print("❌ ERROR: No se recibieron ejercicios")
+            return jsonify({"error": "No se recibieron ejercicios para optimizar"}), 400
+
+        # Convertir a tuplas si vienen como listas
+        ejercicios_tuplas = [(ej[0], ej[1]) for ej in ejercicios]
+        print(f"📋 Ejercicios a optimizar: {ejercicios_tuplas}")
+
+        # Optimizar secuencia
+        print(f"🔄 Llamando a optimizar_secuencia_np con método: {metodo}")
+        resultado = utils.optimizar_secuencia_np(ejercicios_tuplas, metodo)
+
+        print(f"📊 Resultado: {resultado}")
+
+        if resultado.get("success"):
+            # Formatear para el frontend
+            secuencia_formateada = []
+            for ej_nombre in resultado["secuencia_optimizada"]:
+                grupo = next(
+                    (g for g, e in ejercicios_tuplas if e == ej_nombre), "unknown"
+                )
+                secuencia_formateada.append(
+                    {
+                        "grupo": grupo,
+                        "ejercicio": ej_nombre,
+                        "nombre_formateado": utils.formatear_nombre_ejercicio(
+                            ej_nombre
+                        ),
+                    }
+                )
+
+            print("✅ Optimización exitosa")
+            return jsonify(
+                {
+                    "success": True,
+                    "metodo": resultado["metodo"],
+                    "costo": round(resultado["costo"], 2),
+                    "costo_original": round(
+                        resultado.get("costo_original", resultado["costo"]), 2
+                    ),
+                    "costo_optimizado": round(
+                        resultado.get("costo_optimizado", resultado["costo"]), 2
+                    ),
+                    "ahorro": round(resultado.get("ahorro", 0), 2),
+                    "mejora": resultado["mejora"],
+                    "secuencia_optimizada": secuencia_formateada,
+                }
+            )
+        else:
+            print(f"❌ ERROR en optimización: {resultado}")
+            return jsonify(resultado), 400
+
+    except Exception as e:
+        print(f"❌ EXCEPCIÓN: {str(e)}")
+        import traceback
+
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 

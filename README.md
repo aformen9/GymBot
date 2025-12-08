@@ -453,23 +453,20 @@ Las contribuciones son bienvenidas. Por favor:
 
 ## 📄 Licencia
 
-Este proyecto es de código abierto y está disponible bajo la licencia MIT.
+Este proyecto es de código abierto.
 
 ---
 
-## 👨‍💻 Autor
+## 👨‍💻 Autores
 
-**Tu Nombre**
-- GitHub: [@tu-usuario](https://github.com/tu-usuario)
-- Email: tu-email@ejemplo.com
+**Agustín Formenti**
+- GitHub: [@aformen9](https://github.com/aformen9)
+- Email: aguformenti01@gmail.com
 
----
+**Juan Cruz Chocobares**
+- GitHub: [@choco721](https://github.com/choco721)
+- Email: juancruzchocobares@gmail.com
 
-## 🙏 Agradecimientos
-
-- **SWI-Prolog** por el excelente motor de inferencia
-- **PySwip** por la integración Python-Prolog
-- Comunidad de sistemas expertos y optimización combinatoria
 
 ---
 
@@ -479,4 +476,4 @@ Este proyecto es de código abierto y está disponible bajo la licencia MIT.
 
 ---
 
-**¡Entrena más inteligente, no más duro! 💪🧠**
+**¡Entrená más inteligente, no más duro! 💪🧠**
